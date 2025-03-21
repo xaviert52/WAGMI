@@ -29,8 +29,7 @@ WAGMI/
      package.json # Node.js dependencies and scripts 
      README.md # Project documentation 
      cache/ # Hardhat cache (excluded from Git) 
-     contracts/ 
-          # Solidity smart contracts 
+     contracts/ # Solidity smart contracts 
           Governor.sol # Governance contract 
           Staking.sol # Staking contract 
           Timelock.sol # Timelock controller for proposal execution 
@@ -68,39 +67,39 @@ WAGMI/
 - [MetaMask](https://metamask.io/) (for interacting with the deployed contracts)
 
 ### Steps
-1. Clone the repository:
+1. **Clone the repository**:
    ```bash
-   git clone https://github.com/<your-username>/WAGMI-DAO.git
+   git clone https://github.com/xaviert52/WAGMI-DAO.git
    cd WAGMI-DAO
 
-2. install dependencies:
+2. **install dependencies**:
    npm install
 
-3. Create a .env file in the WAGMI/ directory with the following variables:
-     PRIVATE_KEY=your_private_key
-     MOONSCAN_API_KEY=your_moonscan_api_key
-     INITIAL_OWNER=your_wallet_address
-     TREASURY_ADDRESS=treasury_contract_address
-     STAKING_TOKEN_ADDRESS=wagmi_token_address
-     TIMELOCK_MIN_DELAY=3600
+3. **Create a .env file in the WAGMI/ directory with the following variables**:
+     - PRIVATE_KEY=your_private_key
+     - MOONSCAN_API_KEY=your_moonscan_api_key
+     - INITIAL_OWNER=your_wallet_address
+     - TREASURY_ADDRESS=treasury_contract_address
+     - STAKING_TOKEN_ADDRESS=wagmi_token_address
+     - TIMELOCK_MIN_DELAY=3600
 
-4. Compile the contracts:
+4. **Compile the contracts**:
    npx hardhat compile
 
-4. Run tests:
+5. **Run tests**:
    npx hardhat test
 
 
 ### Deployment
 Deploy to Moonbase Alpha (Testnet)
-1. Deploy the contracts:
-     npx hardhat run scripts/deployWAGMIToken.js --network moonbase
-     npx hardhat run scripts/deployTreasury.js --network moonbase
-     npx hardhat run scripts/deployStaking.js --network moonbase
-     npx hardhat run scripts/deployTimelock.js --network moonbase
-     npx hardhat run scripts/deployGovernor.js --network moonbase
+1. **Deploy the contracts**:
+     - npx hardhat run scripts/deployWAGMIToken.js --network moonbase
+     - npx hardhat run scripts/deployTreasury.js --network moonbase
+     - npx hardhat run scripts/deployStaking.js --network moonbase
+     - npx hardhat run scripts/deployTimelock.js --network moonbase
+     - npx hardhat run scripts/deployGovernor.js --network moonbase
 
-2. Verify the contracts on Moonbeam Explorer:
+2. **Verify the contracts on Moonbeam Explorer**:
      npx hardhat verify --network moonbase <contract_address> <constructor_arguments>
 
 ### Usage
