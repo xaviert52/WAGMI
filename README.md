@@ -69,7 +69,7 @@ The **WAGMI DAO Ecosystem** is a decentralized platform that combines governance
 ### Steps
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/xaviert52/WAGMI-DAO.git
+   git clone https://github.com/xaviert52/WAGMI.git
    cd WAGMI-DAO
 
 2. **install dependencies**:
