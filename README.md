@@ -30,31 +30,31 @@ The **WAGMI DAO Ecosystem** is a decentralized platform that combines governance
      - README.md # Project documentation 
      - cache/ # Hardhat cache (excluded from Git) 
      - contracts/ # Solidity smart contracts 
-          - Governor.sol # Governance contract 
-          - Staking.sol # Staking contract 
-          - Timelock.sol # Timelock controller for proposal execution 
-          - Treasury.sol # Treasury management contract 
-          - WAGMIToken.sol # ERC-20 token contract for $WAGMI 
-          - interfaces/ # Interfaces for contracts 
+          + Governor.sol # Governance contract 
+          + Staking.sol # Staking contract 
+          + Timelock.sol # Timelock controller for proposal execution 
+          + Treasury.sol # Treasury management contract 
+          + WAGMIToken.sol # ERC-20 token contract for $WAGMI 
+          + interfaces/ # Interfaces for contracts 
                - iGovernor.sol # Interface for the Governor contract 
                - IStaking.sol # Interface for the Staking contract 
                - ITreasury.sol # Interface for the Treasury contract 
      - frontend/ # Frontend code (React-based) 
-          - src/ 
+          + src/ 
                - App.js # Main React component 
                - index.js # Entry point for the React app 
      - scripts/ # Deployment scripts 
-          - deployGovernor.js # Deploys the Governor contract 
-          - deployStaking.js # Deploys the Staking contract 
-          - deployTimelock.js # Deploys the Timelock contract 
-          - deployTreasury.js # Deploys the Treasury contract 
-          - deployWAGMIToken.js # Deploys the WAGMI token contract 
+          + deployGovernor.js # Deploys the Governor contract 
+          + deployStaking.js # Deploys the Staking contract 
+          + deployTimelock.js # Deploys the Timelock contract 
+          + deployTreasury.js # Deploys the Treasury contract 
+          + deployWAGMIToken.js # Deploys the WAGMI token contract 
      - test/ # Unit tests for smart contracts 
-          - Governor.test.js # Tests for the Governor contract 
-          - Staking.test.js # Tests for the Staking contract 
-          - Timelock.test.js # Tests for the Timelock contract 
-          - Treasury.test.js # Tests for the Treasury contract 
-          - WAGMIToken.test.js # Tests for the WAGMI token contract
+          + Governor.test.js # Tests for the Governor contract 
+          + Staking.test.js # Tests for the Staking contract 
+          + Timelock.test.js # Tests for the Timelock contract 
+          + Treasury.test.js # Tests for the Treasury contract 
+          + WAGMIToken.test.js # Tests for the WAGMI token contract
 
 
 ---
@@ -114,5 +114,5 @@ Deploy to Moonbase Alpha (Testnet)
 4. **Contributing**
      - We welcome contributions! Please fork the repository and submit a pull request.
 
-- **License**
+### License
      - This project is licensed under the MIT License. See the LICENSE file for details.
