@@ -19,10 +19,10 @@ The **WAGMI DAO Ecosystem** is a decentralized platform that combines governance
 ---
 
 ## Workspace Structure
-The project is organized as follows:
-.vscode/ 
-     settings.json # VSCode-specific settings 
-WAGMI/ 
+### The project is organized as follows:
+1. vscode/ 
+     - settings.json # VSCode-specific settings 
+2. WAGMI/ 
      .env # Environment variables (excluded from Git) 
      .gitignore # Files and folders to ignore in Git 
      hardhat.config.js # Hardhat configuration for Solidity development 
@@ -73,7 +73,7 @@ WAGMI/
    cd WAGMI-DAO
 
 2. **install dependencies**:
-   npm install
+   - npm install
 
 3. **Create a .env file in the WAGMI/ directory with the following variables**:
      - PRIVATE_KEY=your_private_key
@@ -84,10 +84,10 @@ WAGMI/
      - TIMELOCK_MIN_DELAY=3600
 
 4. **Compile the contracts**:
-   npx hardhat compile
+   - npx hardhat compile
 
 5. **Run tests**:
-   npx hardhat test
+   - npx hardhat test
 
 
 ### Deployment
@@ -100,19 +100,19 @@ Deploy to Moonbase Alpha (Testnet)
      - npx hardhat run scripts/deployGovernor.js --network moonbase
 
 2. **Verify the contracts on Moonbeam Explorer**:
-     npx hardhat verify --network moonbase <contract_address> <constructor_arguments>
+     - npx hardhat verify --network moonbase <contract_address> <constructor_arguments>
 
 ### Usage
-Staking
-     Stake $WAGMI tokens to earn rewards and gain voting power.
-     Use the frontend to interact with the staking contract.
-Governance
-     Propose and vote on decisions using the $WAGMI token.
-     Only stakers can participate in governance.
-Treasury
-     Funds are managed transparently and allocated based on community decisions.
-Contributing
-     We welcome contributions! Please fork the repository and submit a pull request.
+1. **Staking**
+     - Stake $WAGMI tokens to earn rewards and gain voting power.
+     - Use the frontend to interact with the staking contract.
+2. **Governance**
+     - Propose and vote on decisions using the $WAGMI token.
+     - Only stakers can participate in governance.
+3. **Treasury**
+     - Funds are managed transparently and allocated based on community decisions.
+4. **Contributing**
+     - We welcome contributions! Please fork the repository and submit a pull request.
 
-License
-     This project is licensed under the MIT License. See the LICENSE file for details.
+- **License**
+     - This project is licensed under the MIT License. See the LICENSE file for details.
