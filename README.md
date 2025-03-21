@@ -23,38 +23,38 @@ The **WAGMI DAO Ecosystem** is a decentralized platform that combines governance
 1. vscode/ 
      - settings.json # VSCode-specific settings 
 2. WAGMI/ 
-     .env # Environment variables (excluded from Git) 
-     .gitignore # Files and folders to ignore in Git 
-     hardhat.config.js # Hardhat configuration for Solidity development 
-     package.json # Node.js dependencies and scripts 
-     README.md # Project documentation 
-     cache/ # Hardhat cache (excluded from Git) 
-     contracts/ # Solidity smart contracts 
-          Governor.sol # Governance contract 
-          Staking.sol # Staking contract 
-          Timelock.sol # Timelock controller for proposal execution 
-          Treasury.sol # Treasury management contract 
-          WAGMIToken.sol # ERC-20 token contract for $WAGMI 
-          interfaces/ # Interfaces for contracts 
-               iGovernor.sol # Interface for the Governor contract 
-               IStaking.sol # Interface for the Staking contract 
-               ITreasury.sol # Interface for the Treasury contract 
-     frontend/ # Frontend code (React-based) 
-          src/ 
-               App.js # Main React component 
-               index.js # Entry point for the React app 
-     scripts/ # Deployment scripts 
-          deployGovernor.js # Deploys the Governor contract 
-          deployStaking.js # Deploys the Staking contract 
-          deployTimelock.js # Deploys the Timelock contract 
-          deployTreasury.js # Deploys the Treasury contract 
-          deployWAGMIToken.js # Deploys the WAGMI token contract 
-     test/ # Unit tests for smart contracts 
-          Governor.test.js # Tests for the Governor contract 
-          Staking.test.js # Tests for the Staking contract 
-          Timelock.test.js # Tests for the Timelock contract 
-          Treasury.test.js # Tests for the Treasury contract 
-          WAGMIToken.test.js # Tests for the WAGMI token contract
+     - .env # Environment variables (excluded from Git) 
+     - .gitignore # Files and folders to ignore in Git 
+      -hardhat.config.js # Hardhat configuration for Solidity development 
+     - package.json # Node.js dependencies and scripts 
+     - README.md # Project documentation 
+     - cache/ # Hardhat cache (excluded from Git) 
+     - contracts/ # Solidity smart contracts 
+          - Governor.sol # Governance contract 
+          - Staking.sol # Staking contract 
+          - Timelock.sol # Timelock controller for proposal execution 
+          - Treasury.sol # Treasury management contract 
+          - WAGMIToken.sol # ERC-20 token contract for $WAGMI 
+          - interfaces/ # Interfaces for contracts 
+               - iGovernor.sol # Interface for the Governor contract 
+               - IStaking.sol # Interface for the Staking contract 
+               - ITreasury.sol # Interface for the Treasury contract 
+     - frontend/ # Frontend code (React-based) 
+          - src/ 
+               - App.js # Main React component 
+               - index.js # Entry point for the React app 
+     - scripts/ # Deployment scripts 
+          - deployGovernor.js # Deploys the Governor contract 
+          - deployStaking.js # Deploys the Staking contract 
+          - deployTimelock.js # Deploys the Timelock contract 
+          - deployTreasury.js # Deploys the Treasury contract 
+          - deployWAGMIToken.js # Deploys the WAGMI token contract 
+     - test/ # Unit tests for smart contracts 
+          - Governor.test.js # Tests for the Governor contract 
+          - Staking.test.js # Tests for the Staking contract 
+          - Timelock.test.js # Tests for the Timelock contract 
+          - Treasury.test.js # Tests for the Treasury contract 
+          - WAGMIToken.test.js # Tests for the WAGMI token contract
 
 
 ---
