@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract StakingContract is Ownable, ReentrancyGuard {
     IERC20 public stakingToken;
@@ -18,6 +18,7 @@ contract StakingContract is Ownable, ReentrancyGuard {
     struct Plan {
         uint256 lockPeriod;
         uint256 rewardRate;
+        uint256 earlyWithdrawalPenalty; // Penalización específica para cada plan
     }
 
     mapping(address => Stake[]) public stakes;
@@ -25,8 +26,8 @@ contract StakingContract is Ownable, ReentrancyGuard {
 
     uint256 public totalStaked;
     uint256 public rewardPool;
-    uint256 public earlyWithdrawalPenalty;
     uint256 public maxStakePerUser;
+    uint256 public maxStakePerWhale; // Restricción para ballenas
 
     event Staked(address indexed user, uint256 amount, uint256 planIndex);
     event Withdrawn(address indexed user, uint256 amount, uint256 reward);
@@ -36,17 +37,24 @@ contract StakingContract is Ownable, ReentrancyGuard {
     constructor(
         address _stakingToken,
         uint256 _maxStakePerUser,
-        uint256 _earlyWithdrawalPenalty,
+        uint256 _maxStakePerWhale,
         uint256[] memory _lockPeriods,
-        uint256[] memory _rewardRates
+        uint256[] memory _rewardRates,
+        uint256[] memory _earlyWithdrawalPenalties
     ) {
         require(_stakingToken != address(0), "Invalid token address");
+        require(_lockPeriods.length == _rewardRates.length && _rewardRates.length == _earlyWithdrawalPenalties.length, "Mismatched plan parameters");
+
         stakingToken = IERC20(_stakingToken);
         maxStakePerUser = _maxStakePerUser;
-        earlyWithdrawalPenalty = _earlyWithdrawalPenalty;
+        maxStakePerWhale = _maxStakePerWhale;
 
         for (uint256 i = 0; i < _lockPeriods.length; i++) {
-            stakingPlans.push(Plan({lockPeriod: _lockPeriods[i], rewardRate: _rewardRates[i]}));
+            stakingPlans.push(Plan({
+                lockPeriod: _lockPeriods[i],
+                rewardRate: _rewardRates[i],
+                earlyWithdrawalPenalty: _earlyWithdrawalPenalties[i]
+            }));
         }
     }
 
@@ -63,6 +71,7 @@ contract StakingContract is Ownable, ReentrancyGuard {
 
         uint256 userTotalStake = getUserTotalStake(msg.sender);
         require(userTotalStake + _amount <= maxStakePerUser, "Stake exceeds maximum allowed per user");
+        require(totalStaked + _amount <= maxStakePerWhale, "Stake exceeds maximum allowed for whales");
 
         require(stakingToken.transferFrom(msg.sender, address(this), _amount), "Transfer failed");
 
@@ -83,13 +92,14 @@ contract StakingContract is Ownable, ReentrancyGuard {
 
         Stake memory userStake = stakes[msg.sender][_stakeIndex];
         uint256 stakingDuration = block.timestamp - userStake.startTime;
-        uint256 reward = calculateReward(userStake, stakingDuration);
+        Plan memory plan = getPlanByLockPeriod(userStake.lockPeriod);
 
+        uint256 reward = calculateReward(userStake, stakingDuration);
         uint256 amountToTransfer = userStake.amount + reward;
         uint256 penalty = 0;
 
         if (userStake.lockPeriod > 0 && stakingDuration < userStake.lockPeriod) {
-            penalty = (userStake.amount * earlyWithdrawalPenalty) / 100;
+            penalty = (userStake.amount * plan.earlyWithdrawalPenalty) / 100;
             amountToTransfer -= penalty;
             rewardPool += penalty;
             emit EarlyWithdrawal(msg.sender, userStake.amount, penalty);
@@ -130,5 +140,14 @@ contract StakingContract is Ownable, ReentrancyGuard {
             totalVotingPower += (userStake.amount * multiplier) / 1e18;
         }
         return totalVotingPower;
+    }
+
+    function getPlanByLockPeriod(uint256 lockPeriod) internal view returns (Plan memory) {
+        for (uint256 i = 0; i < stakingPlans.length; i++) {
+            if (stakingPlans[i].lockPeriod == lockPeriod) {
+                return stakingPlans[i];
+            }
+        }
+        revert("Plan not found");
     }
 }
