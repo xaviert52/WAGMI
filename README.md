@@ -25,7 +25,7 @@ The **WAGMI DAO Ecosystem** is a decentralized platform that combines governance
 2. WAGMI/ 
      - .env # Environment variables (excluded from Git) 
      - .gitignore # Files and folders to ignore in Git 
-      -hardhat.config.js # Hardhat configuration for Solidity development 
+     - hardhat.config.js # Hardhat configuration for Solidity development 
      - package.json # Node.js dependencies and scripts 
      - README.md # Project documentation 
      - cache/ # Hardhat cache (excluded from Git) 
@@ -70,7 +70,7 @@ The **WAGMI DAO Ecosystem** is a decentralized platform that combines governance
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/xaviert52/WAGMI.git
-   cd WAGMI-DAO
+   cd WAGMI
 
 2. **install dependencies**:
    - npm install

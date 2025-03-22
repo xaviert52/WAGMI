@@ -4,8 +4,9 @@ pragma solidity ^0.8.26;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
-contract StakingContract is Ownable, ReentrancyGuard {
+contract StakingContract is Ownable, ReentrancyGuard, Pausable {
     IERC20 public stakingToken;
 
     struct Stake {
@@ -43,7 +44,11 @@ contract StakingContract is Ownable, ReentrancyGuard {
         uint256[] memory _earlyWithdrawalPenalties
     ) {
         require(_stakingToken != address(0), "Invalid token address");
-        require(_lockPeriods.length == _rewardRates.length && _rewardRates.length == _earlyWithdrawalPenalties.length, "Mismatched plan parameters");
+        require(
+            _lockPeriods.length == _rewardRates.length &&
+            _rewardRates.length == _earlyWithdrawalPenalties.length,
+            "Mismatched plan parameters"
+        );
 
         stakingToken = IERC20(_stakingToken);
         maxStakePerUser = _maxStakePerUser;
@@ -65,7 +70,7 @@ contract StakingContract is Ownable, ReentrancyGuard {
         emit RewardPoolAdded(amount);
     }
 
-    function stake(uint256 _amount, uint256 _planIndex) external nonReentrant {
+    function stake(uint256 _amount, uint256 _planIndex) external nonReentrant whenNotPaused {
         require(_amount > 0, "Cannot stake zero tokens");
         require(_planIndex < stakingPlans.length, "Invalid staking plan");
 
@@ -87,7 +92,7 @@ contract StakingContract is Ownable, ReentrancyGuard {
         emit Staked(msg.sender, _amount, _planIndex);
     }
 
-    function withdraw(uint256 _stakeIndex) external nonReentrant {
+    function withdraw(uint256 _stakeIndex) external nonReentrant whenNotPaused {
         require(_stakeIndex < stakes[msg.sender].length, "Invalid stake index");
 
         Stake memory userStake = stakes[msg.sender][_stakeIndex];
@@ -149,5 +154,13 @@ contract StakingContract is Ownable, ReentrancyGuard {
             }
         }
         revert("Plan not found");
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 }

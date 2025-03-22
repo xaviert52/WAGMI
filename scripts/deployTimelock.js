@@ -11,12 +11,18 @@ async function main() {
 
   console.log("Deploying TimelockController...");
   const Timelock = await ethers.getContractFactory("WAGMITimelock");
-  const timelock = await Timelock.deploy(minDelay, [governorAddress], [timelock.address]); // Asignar EXECUTOR_ROLE al TimelockController
+  const timelock = await Timelock.deploy(minDelay, [governorAddress], []); // Proposers y ejecutores iniciales vacíos
 
   await timelock.deployed();
   console.log("TimelockController deployed to:", timelock.address);
 
-  // Revocar el rol de administrador del TimelockController
+  // Asignar EXECUTOR_ROLE al propio contrato TimelockController
+  console.log("Assigning EXECUTOR_ROLE to TimelockController...");
+  const EXECUTOR_ROLE = await timelock.EXECUTOR_ROLE();
+  await timelock.grantRole(EXECUTOR_ROLE, timelock.address);
+  console.log("EXECUTOR_ROLE assigned to TimelockController.");
+
+  // Revocar el rol de administrador del deployer
   console.log("Revoking admin role from deployer...");
   const TIMELOCK_ADMIN_ROLE = await timelock.TIMELOCK_ADMIN_ROLE();
   await timelock.revokeRole(TIMELOCK_ADMIN_ROLE, await ethers.provider.getSigner().getAddress());
