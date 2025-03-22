@@ -1,136 +1,117 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
-contract StakingContract is Ownable, ReentrancyGuard {
-    IERC20 public stakingToken;
+/// @title WAGMIToken
+/// @notice ERC-20 token for the WAGMI DAO with burn and treasury fees.
+contract WAGMIToken is ERC20, Ownable, ReentrancyGuard, Pausable {
+    uint256 public burnFee; // Fee percentage for burning tokens
+    uint256 public treasuryFee; // Fee percentage for transferring to the treasury
+    uint256 public totalFee; // Total fee percentage (burnFee + treasuryFee)
+    address public treasuryAddress; // Address of the treasury contract
 
-    struct Stake {
-        uint256 amount;
-        uint256 startTime;
-        uint256 lockPeriod;
-        uint256 rewardRate;
-    }
+    mapping(address => bool) public feeExempt; // Addresses exempt from fees
 
-    struct Plan {
-        uint256 lockPeriod;
-        uint256 rewardRate;
-    }
+    event FeeStructureUpdated(uint256 burnFee, uint256 treasuryFee);
+    event FeeExemptionUpdated(address indexed account, bool isExempt);
+    event TreasuryAddressUpdated(address indexed newTreasuryAddress);
 
-    mapping(address => Stake[]) public stakes;
-    Plan[] public stakingPlans;
-
-    uint256 public totalStaked;
-    uint256 public rewardPool;
-    uint256 public earlyWithdrawalPenalty;
-    uint256 public maxStakePerUser;
-
-    event Staked(address indexed user, uint256 amount, uint256 planIndex);
-    event Withdrawn(address indexed user, uint256 amount, uint256 reward);
-    event EarlyWithdrawal(address indexed user, uint256 amount, uint256 penalty);
-    event RewardPoolAdded(uint256 amount);
-
+    /// @notice Constructor to initialize the WAGMIToken contract.
+    /// @param _name Name of the token.
+    /// @param _symbol Symbol of the token.
+    /// @param _initialSupply Initial supply of the token.
+    /// @param _treasuryAddress Address of the treasury contract.
     constructor(
-        address _stakingToken,
-        uint256 _maxStakePerUser,
-        uint256 _earlyWithdrawalPenalty,
-        uint256[] memory _lockPeriods,
-        uint256[] memory _rewardRates
-    ) {
-        require(_stakingToken != address(0), "Invalid token address");
-        stakingToken = IERC20(_stakingToken);
-        maxStakePerUser = _maxStakePerUser;
-        earlyWithdrawalPenalty = _earlyWithdrawalPenalty;
+        string memory _name,
+        string memory _symbol,
+        uint256 _initialSupply,
+        address _treasuryAddress
+    ) ERC20(_name, _symbol) {
+        require(_treasuryAddress != address(0), "Invalid treasury address");
 
-        for (uint256 i = 0; i < _lockPeriods.length; i++) {
-            stakingPlans.push(Plan({lockPeriod: _lockPeriods[i], rewardRate: _rewardRates[i]}));
+        _mint(msg.sender, _initialSupply);
+        treasuryAddress = _treasuryAddress;
+
+        // Default fees: 1% burn, 1% treasury
+        burnFee = 1;
+        treasuryFee = 1;
+        totalFee = burnFee + treasuryFee;
+    }
+
+    /// @notice Updates the fee structure.
+    /// @param _burnFee New burn fee percentage.
+    /// @param _treasuryFee New treasury fee percentage.
+    function setFeeStructure(uint256 _burnFee, uint256 _treasuryFee) external onlyOwner {
+        require(_burnFee + _treasuryFee <= 100, "Total fee cannot exceed 100%");
+        burnFee = _burnFee;
+        treasuryFee = _treasuryFee;
+        totalFee = burnFee + treasuryFee;
+
+        emit FeeStructureUpdated(burnFee, treasuryFee);
+    }
+
+    /// @notice Updates the treasury address.
+    /// @param _treasuryAddress New treasury address.
+    function setTreasuryAddress(address _treasuryAddress) external onlyOwner {
+        require(_treasuryAddress != address(0), "Invalid treasury address");
+        treasuryAddress = _treasuryAddress;
+
+        emit TreasuryAddressUpdated(treasuryAddress);
+    }
+
+    /// @notice Sets fee exemption for an address.
+    /// @param account Address to exempt from fees.
+    /// @param isExempt Whether the address is exempt from fees.
+    function setFeeExemption(address account, bool isExempt) external onlyOwner {
+        feeExempt[account] = isExempt;
+
+        emit FeeExemptionUpdated(account, isExempt);
+    }
+
+    /// @notice Pauses token transfers.
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice Unpauses token transfers.
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    /// @notice Overrides the ERC20 transfer function to include fees.
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal override whenNotPaused {
+        require(amount > 0, "Transfer amount must be greater than zero");
+
+        if (feeExempt[sender] || feeExempt[recipient] || totalFee == 0) {
+            super._transfer(sender, recipient, amount);
+        } else {
+            uint256 burnAmount = (amount * burnFee) / 100;
+            uint256 treasuryAmount = (amount * treasuryFee) / 100;
+            uint256 netAmount = amount - burnAmount - treasuryAmount;
+
+            // Ensure no rounding issues cause negative netAmount
+            require(netAmount >= 0, "Net amount must be non-negative");
+
+            // Burn the burnAmount
+            if (burnAmount > 0) {
+                _burn(sender, burnAmount);
+            }
+
+            // Transfer the treasuryAmount to the treasury
+            if (treasuryAmount > 0) {
+                super._transfer(sender, treasuryAddress, treasuryAmount);
+            }
+
+            // Transfer the remaining amount to the recipient
+            super._transfer(sender, recipient, netAmount);
         }
-    }
-
-    function addRewardPool(uint256 amount) external onlyOwner {
-        require(amount > 0, "Amount must be greater than zero");
-        require(stakingToken.transferFrom(msg.sender, address(this), amount), "Transfer failed");
-        rewardPool += amount;
-        emit RewardPoolAdded(amount);
-    }
-
-    function stake(uint256 _amount, uint256 _planIndex) external nonReentrant {
-        require(_amount > 0, "Cannot stake zero tokens");
-        require(_planIndex < stakingPlans.length, "Invalid staking plan");
-
-        uint256 userTotalStake = getUserTotalStake(msg.sender);
-        require(userTotalStake + _amount <= maxStakePerUser, "Stake exceeds maximum allowed per user");
-
-        require(stakingToken.transferFrom(msg.sender, address(this), _amount), "Transfer failed");
-
-        Plan memory plan = stakingPlans[_planIndex];
-        stakes[msg.sender].push(Stake({
-            amount: _amount,
-            startTime: block.timestamp,
-            lockPeriod: plan.lockPeriod,
-            rewardRate: plan.rewardRate
-        }));
-
-        totalStaked += _amount;
-        emit Staked(msg.sender, _amount, _planIndex);
-    }
-
-    function withdraw(uint256 _stakeIndex) external nonReentrant {
-        require(_stakeIndex < stakes[msg.sender].length, "Invalid stake index");
-
-        Stake memory userStake = stakes[msg.sender][_stakeIndex];
-        uint256 stakingDuration = block.timestamp - userStake.startTime;
-        uint256 reward = calculateReward(userStake, stakingDuration);
-
-        uint256 amountToTransfer = userStake.amount + reward;
-        uint256 penalty = 0;
-
-        if (userStake.lockPeriod > 0 && stakingDuration < userStake.lockPeriod) {
-            penalty = (userStake.amount * earlyWithdrawalPenalty) / 100;
-            amountToTransfer -= penalty;
-            rewardPool += penalty;
-            emit EarlyWithdrawal(msg.sender, userStake.amount, penalty);
-        }
-
-        require(amountToTransfer <= stakingToken.balanceOf(address(this)), "Insufficient contract balance");
-
-        stakes[msg.sender][_stakeIndex] = stakes[msg.sender][stakes[msg.sender].length - 1];
-        stakes[msg.sender].pop();
-
-        totalStaked -= userStake.amount;
-        require(stakingToken.transfer(msg.sender, amountToTransfer), "Transfer failed");
-        emit Withdrawn(msg.sender, userStake.amount, reward);
-    }
-
-    function calculateReward(Stake memory _stake, uint256 _duration) internal pure returns (uint256) {
-        return (_stake.amount * _stake.rewardRate * _duration) / (365 days * 100);
-    }
-
-    function getUserTotalStake(address _user) public view returns (uint256) {
-        uint256 total = 0;
-        for (uint256 i = 0; i < stakes[_user].length; i++) {
-            total += stakes[_user][i].amount;
-        }
-        return total;
-    }
-
-    function getVotingPower(address _user) external view returns (uint256) {
-        uint256 totalVotingPower = 0;
-        for (uint256 i = 0; i < stakes[_user].length; i++) {
-            Stake memory userStake = stakes[_user][i];
-            uint256 multiplier = 1e18;
-            if (userStake.lockPeriod == 30 days) multiplier = 11e17;
-            else if (userStake.lockPeriod == 90 days) multiplier = 13e17;
-            else if (userStake.lockPeriod == 180 days) multiplier = 16e17;
-            else if (userStake.lockPeriod == 365 days) multiplier = 2e18;
-
-            totalVotingPower += (userStake.amount * multiplier) / 1e18;
-        }
-        return totalVotingPower;
     }
 }
-
-//1 vulnerability = hardcoded-credentials Embedding credentials in source code risks unauthorized access
