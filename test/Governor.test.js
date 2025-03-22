@@ -111,4 +111,15 @@ describe("StakingContract", function () {
     const votingPower = await stakingContract.getVotingPower(user1.address);
     expect(votingPower).to.equal(amount.mul(2)); // 2x multiplier for 365 days lock period
   });
+  
+  it("should revert if a user without voting power tries to create a proposal", async function () {
+    const targets = [stakingContract.address];
+    const values = [0];
+    const calldatas = [stakingContract.interface.encodeFunctionData("stake", [100, 0])];
+    const description = "Test Proposal";
+  
+    await expect(
+      governor.connect(user2).propose(targets, values, calldatas, description)
+    ).to.be.revertedWith("Governor: proposer votes below proposal threshold");
+  });
 });
