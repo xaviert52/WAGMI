@@ -1,31 +1,30 @@
-require("dotenv").config();
-const { ethers, upgrades } = require("hardhat");
+const { ethers } = require("hardhat");
 
 async function main() {
-  // Load environment variables
-  const initialOwner = process.env.INITIAL_OWNER; // Address of the initial owner
-  const treasuryAddress = process.env.TREASURY_ADDRESS; // Address of the Treasury contract
+  // Valores que se pasarán al constructor
+  const tokenName = "We All Gonna Make It"; // Nombre del token
+  const tokenSymbol = "WAGMI"; // Símbolo del token
+  const initialSupply = ethers.utils.parseEther("10000000"); // 10 millones de tokens
+  const treasuryAddress = "0xEAC8800C2758F4683bBaB6197acE7A26802856D9"; // Dirección del contrato de tesorería
+  const initialOwner = "0x1c81F206E72F3659FaE9Fdc6c22Bd355fbD68BF1";
 
-  // Validate environment variables
-  if (!initialOwner || !treasuryAddress) {
-    throw new Error("Please set INITIAL_OWNER and TREASURY_ADDRESS in your .env file");
+  if (!treasuryAddress || !initialOwner) {
+    throw new Error("Please set TREASURY_ADDRESS and INITIAL_OWNER in your .env file");
   }
 
   console.log("Deploying WAGMIToken...");
-  console.log("Initial Owner:", initialOwner);
+  console.log("Token Name:", tokenName);
+  console.log("Token Symbol:", tokenSymbol);
+  console.log("Initial Supply:", initialSupply.toString());
   console.log("Treasury Address:", treasuryAddress);
 
-  // Get the contract factory
-  const WAGMIToken = await ethers.getContractFactory("WAGMI");
+  // Obtener la fábrica del contrato
+  const WAGMIToken = await ethers.getContractFactory("WAGMIToken");
 
-  // Deploy the proxy contract
-  const wagmiToken = await upgrades.deployProxy(WAGMIToken, [initialOwner, treasuryAddress], {
-    initializer: "initialize", // Specify the initializer function
-  });
+  // Desplegar el contrato
+  const wagmiToken = await WAGMIToken.deploy(tokenName, tokenSymbol, initialSupply, treasuryAddress, initialOwner);
 
-  // Wait for the deployment to complete
   await wagmiToken.deployed();
-
   console.log("WAGMIToken deployed to:", wagmiToken.address);
 }
 

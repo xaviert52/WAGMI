@@ -29,10 +29,11 @@ contract WAGMIToken is ERC20, Ownable, ReentrancyGuard, Pausable {
         string memory _name,
         string memory _symbol,
         uint256 _initialSupply,
-        address _treasuryAddress
-    ) ERC20(_name, _symbol) {
+        address _treasuryAddress,
+        address _initialOwner
+        
+    ) ERC20(_name, _symbol) Ownable(_initialOwner) {
         require(_treasuryAddress != address(0), "Invalid treasury address");
-
         _mint(msg.sender, _initialSupply);
         treasuryAddress = _treasuryAddress;
 
