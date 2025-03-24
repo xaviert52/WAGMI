@@ -11,10 +11,11 @@ The **WAGMI DAO Ecosystem** is a decentralized platform that combines governance
 2. **Staking**:
    - Stake $WAGMI tokens to earn rewards and gain voting power.
    - Flexible and locked staking options with varying rewards.
+   - Funds collected from transaction fees and staking penalties are sent back to the rewardPool.
 
 3. **Treasury**:
-   - Manages funds collected from transaction fees and staking penalties.
-   - Funds are allocated to ecosystem growth, partnerships, and community rewards.
+   - Receives, allocates and manages the ecosystem's funds.
+   - Funds are allocated to ecosystem growth (launchpad), partnerships, and community rewards.
 
 ---
 
@@ -80,8 +81,8 @@ The **WAGMI DAO Ecosystem** is a decentralized platform that combines governance
      - MOONSCAN_API_KEY=your_moonscan_api_key
      - INITIAL_OWNER=your_wallet_address
      - TREASURY_ADDRESS=treasury_contract_address
-     - STAKING_TOKEN_ADDRESS=wagmi_token_address
      - TIMELOCK_MIN_DELAY=3600
+     - EARLY_WITHDRAWAL_PENALTY=25 # 25% penalty
 
 4. **Compile the contracts**:
    - npx hardhat compile
@@ -111,8 +112,9 @@ Deploy to Moonbase Alpha (Testnet)
      - Only stakers can participate in governance.
 3. **Treasury**
      - Funds are managed transparently and allocated based on community decisions.
-4. **Contributing**
-     - We welcome contributions! Please fork the repository and submit a pull request.
+     
+### Contributing
+We welcome contributions! Please fork the repository and submit a pull request.
 
 ### License
 This project is licensed under the MIT License. See the LICENSE file for details.

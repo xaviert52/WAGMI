@@ -1,11 +1,11 @@
 require("dotenv").config();
 const { ethers } = require("hardhat");
+const fs = require("fs");
 
 async function main() {
   const stakingTokenAddress = process.env.STAKING_TOKEN_ADDRESS;
   const initialOwner = process.env.INITIAL_OWNER;
-  const maxStakePerUser = ethers.utils.parseEther("1000");
-  const maxStakePerWhale = ethers.utils.parseEther("100000");
+  const maxStake = ethers.utils.parseEther("10000"); // Máximo de stake permitido para todos los usuarios
   const lockPeriods = [30 * 24 * 60 * 60, 90 * 24 * 60 * 60, 180 * 24 * 60 * 60, 365 * 24 * 60 * 60];
   const rewardRates = [5, 10, 15, 20];
   const earlyWithdrawalPenalties = [20, 15, 10, 5];
@@ -19,8 +19,7 @@ async function main() {
   const stakingContract = await StakingContract.deploy(
     stakingTokenAddress,
     initialOwner,
-    maxStakePerUser,
-    maxStakePerWhale,
+    maxStake,
     lockPeriods,
     rewardRates,
     earlyWithdrawalPenalties
@@ -28,6 +27,11 @@ async function main() {
 
   await stakingContract.deployed();
   console.log("StakingContract deployed to:", stakingContract.address);
+
+  // Guardar la dirección del contrato en el archivo .env
+  const envPath = "./.env";
+  fs.appendFileSync(envPath, `STAKING_CONTRACT_ADDRESS=${stakingContract.address}\n`);
+  console.log(`STAKING_CONTRACT_ADDRESS saved to ${envPath}`);
 }
 
 main()

@@ -94,7 +94,7 @@ contract WAGMIGovernor is Governor, GovernorTimelockControl {
         bytes[] memory calldatas,
         bytes32 descriptionHash
     ) internal override(Governor, GovernorTimelockControl) {
-        super._execute(proposalId, targets, values, calldatas, descriptionHash);
+        GovernorTimelockControl._execute(proposalId, targets, values, calldatas, descriptionHash);
     }
 
     /// @notice Cancels a proposal.
@@ -109,7 +109,7 @@ contract WAGMIGovernor is Governor, GovernorTimelockControl {
         bytes[] memory calldatas,
         bytes32 descriptionHash
     ) internal override(Governor, GovernorTimelockControl) returns (uint256) {
-        return super._cancel(targets, values, calldatas, descriptionHash);
+        return GovernorTimelockControl._cancel(targets, values, calldatas, descriptionHash);
     }
 
     /// @notice Checks if the contract supports a given interface.
@@ -119,23 +119,8 @@ contract WAGMIGovernor is Governor, GovernorTimelockControl {
         return super.supportsInterface(interfaceId);
     }
 
-    /// @notice Implements CLOCK_MODE for compatibility.
-    function CLOCK_MODE() external pure override returns (string memory) {
-        return "mode";
-    }
-
-    /// @notice Implements COUNTING_MODE for compatibility.
-    function COUNTING_MODE() external pure override returns (string memory) {
-        return "mode";
-    }
-
-    /// @notice Implements clock for compatibility.
-    function clock() external pure override returns (uint48) {
-        return uint48(block.timestamp);
-    }
-
-    /// @notice Implements hasVoted for compatibility.
-    function hasVoted(uint256 proposalId, address account) external pure override returns (bool) {
-        return false;
+    /// @notice Implements the `_executor` function required by GovernorTimelockControl.
+    function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
+        return GovernorTimelockControl._executor();
     }
 }

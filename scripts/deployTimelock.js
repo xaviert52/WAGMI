@@ -1,5 +1,6 @@
 require("dotenv").config();
 const { ethers } = require("hardhat");
+const fs = require("fs");
 
 async function main() {
   const minDelay = process.env.TIMELOCK_MIN_DELAY || 3600; // 1 hour by default
@@ -16,17 +17,10 @@ async function main() {
   await timelock.deployed();
   console.log("TimelockController deployed to:", timelock.address);
 
-  // Assign EXECUTOR_ROLE to the TimelockController itself
-  console.log("Assigning EXECUTOR_ROLE to TimelockController...");
-  const EXECUTOR_ROLE = await timelock.EXECUTOR_ROLE();
-  await timelock.grantRole(EXECUTOR_ROLE, timelock.address);
-  console.log("EXECUTOR_ROLE assigned to TimelockController.");
-
-  // Revoke admin role from the deployer
-  console.log("Revoking admin role from deployer...");
-  const TIMELOCK_ADMIN_ROLE = await timelock.TIMELOCK_ADMIN_ROLE();
-  await timelock.revokeRole(TIMELOCK_ADMIN_ROLE, await ethers.provider.getSigner().getAddress());
-  console.log("Admin role revoked.");
+  // Guardar la dirección del contrato en el archivo .env
+  const envPath = "./.env";
+  fs.appendFileSync(envPath, `TIMELOCK_ADDRESS=${timelock.address}\n`);
+  console.log(`TIMELOCK_ADDRESS saved to ${envPath}`);
 }
 
 main()

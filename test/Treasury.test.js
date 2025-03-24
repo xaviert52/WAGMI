@@ -7,7 +7,7 @@ describe("Treasury", function () {
   beforeEach(async function () {
     [owner] = await ethers.getSigners();
     Treasury = await ethers.getContractFactory("Treasury");
-    treasury = await Treasury.deploy();
+    treasury = await Treasury.deploy(owner.address);
     await treasury.deployed();
   });
 

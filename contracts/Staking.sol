@@ -29,8 +29,7 @@ contract StakingContract is Ownable, ReentrancyGuard, Pausable {
 
     uint256 public totalStaked;
     uint256 public rewardPool;
-    uint256 public maxStakePerUser;
-    uint256 public maxStakePerWhale; // Restriction for whales
+    uint256 public maxStake;
 
     event Staked(address indexed user, uint256 amount, uint256 planIndex);
     event Withdrawn(address indexed user, uint256 amount, uint256 reward);
@@ -40,16 +39,14 @@ contract StakingContract is Ownable, ReentrancyGuard, Pausable {
     /// @notice Constructor to initialize the staking contract.
     /// @param _stakingToken Address of the staking token.
     /// @param _initialOwner Address of the initial owner.
-    /// @param _maxStakePerUser Maximum stake allowed per user.
-    /// @param _maxStakePerWhale Maximum stake allowed for whales.
+    /// @param _maxStake Máximo de stake permitido para todos los usuarios.
     /// @param _lockPeriods Array of lock periods for staking plans.
     /// @param _rewardRates Array of reward rates for staking plans.
     /// @param _earlyWithdrawalPenalties Array of penalties for early withdrawals.
     constructor(
         address _stakingToken,
         address _initialOwner,
-        uint256 _maxStakePerUser,
-        uint256 _maxStakePerWhale,
+        uint256 _maxStake,
         uint256[] memory _lockPeriods,
         uint256[] memory _rewardRates,
         uint256[] memory _earlyWithdrawalPenalties
@@ -62,8 +59,7 @@ contract StakingContract is Ownable, ReentrancyGuard, Pausable {
         );
 
         stakingToken = IERC20(_stakingToken);
-        maxStakePerUser = _maxStakePerUser;
-        maxStakePerWhale = _maxStakePerWhale;
+        maxStake = _maxStake;
 
         for (uint256 i = 0; i < _lockPeriods.length; i++) {
             stakingPlans.push(Plan({
@@ -91,8 +87,7 @@ contract StakingContract is Ownable, ReentrancyGuard, Pausable {
         require(_planIndex < stakingPlans.length, "Invalid staking plan");
 
         uint256 userTotalStake = getUserTotalStake(msg.sender);
-        require(userTotalStake + _amount <= maxStakePerUser, "Stake exceeds maximum allowed per user");
-        require(totalStaked + _amount <= maxStakePerWhale, "Stake exceeds maximum allowed for whales");
+        require(userTotalStake + _amount <= maxStake, "Stake exceeds maximum allowed");
 
         require(stakingToken.transferFrom(msg.sender, address(this), _amount), "Transfer failed");
 
