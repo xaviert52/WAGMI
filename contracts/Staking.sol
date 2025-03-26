@@ -35,14 +35,9 @@ contract StakingContract is Ownable, ReentrancyGuard, Pausable {
     event Withdrawn(address indexed user, uint256 amount, uint256 reward);
     event EarlyWithdrawal(address indexed user, uint256 amount, uint256 penalty);
     event RewardPoolAdded(uint256 amount);
+    event LockedFundsAccessed(uint256 amount);
 
     /// @notice Constructor to initialize the staking contract.
-    /// @param _stakingToken Address of the staking token.
-    /// @param _initialOwner Address of the initial owner.
-    /// @param _maxStake Máximo de stake permitido para todos los usuarios.
-    /// @param _lockPeriods Array of lock periods for staking plans.
-    /// @param _rewardRates Array of reward rates for staking plans.
-    /// @param _earlyWithdrawalPenalties Array of penalties for early withdrawals.
     constructor(
         address _stakingToken,
         address _initialOwner,
@@ -71,7 +66,6 @@ contract StakingContract is Ownable, ReentrancyGuard, Pausable {
     }
 
     /// @notice Adds funds to the reward pool.
-    /// @param amount Amount to add to the reward pool.
     function addRewardPool(uint256 amount) external onlyOwner {
         require(amount > 0, "Amount must be greater than zero");
         require(stakingToken.transferFrom(msg.sender, address(this), amount), "Transfer failed");
@@ -80,8 +74,6 @@ contract StakingContract is Ownable, ReentrancyGuard, Pausable {
     }
 
     /// @notice Allows users to stake tokens.
-    /// @param _amount Amount of tokens to stake.
-    /// @param _planIndex Index of the staking plan.
     function stake(uint256 _amount, uint256 _planIndex) external nonReentrant whenNotPaused {
         require(_amount > 0, "Cannot stake zero tokens");
         require(_planIndex < stakingPlans.length, "Invalid staking plan");
@@ -104,7 +96,6 @@ contract StakingContract is Ownable, ReentrancyGuard, Pausable {
     }
 
     /// @notice Allows users to withdraw their staked tokens and rewards.
-    /// @param _stakeIndex Index of the stake to withdraw.
     function withdraw(uint256 _stakeIndex) external nonReentrant whenNotPaused {
         require(_stakeIndex < stakes[msg.sender].length, "Invalid stake index");
 
@@ -117,33 +108,49 @@ contract StakingContract is Ownable, ReentrancyGuard, Pausable {
         uint256 penalty = 0;
 
         if (userStake.lockPeriod > 0 && stakingDuration < userStake.lockPeriod) {
-            penalty = (userStake.amount * plan.earlyWithdrawalPenalty) / 100;
+            uint256 elapsedPercentage = (stakingDuration * 100) / userStake.lockPeriod;
+
+            if (elapsedPercentage <= 25) {
+                penalty = (userStake.amount * plan.earlyWithdrawalPenalty) / 100;
+            } else if (elapsedPercentage <= 50) {
+                penalty = (userStake.amount * plan.earlyWithdrawalPenalty) / 200; // Half of the initial penalty
+            } else if (elapsedPercentage <= 75) {
+                penalty = (userStake.amount * plan.earlyWithdrawalPenalty) / 400; // Quarter of the initial penalty
+            } else {
+                penalty = (userStake.amount * plan.earlyWithdrawalPenalty) / 800; // Eighth of the initial penalty
+            }
+
             amountToTransfer -= penalty;
             rewardPool += penalty;
             emit EarlyWithdrawal(msg.sender, userStake.amount, penalty);
         }
 
         require(amountToTransfer <= stakingToken.balanceOf(address(this)), "Insufficient contract balance");
+        require(reward <= rewardPool, "Insufficient reward pool");
 
         stakes[msg.sender][_stakeIndex] = stakes[msg.sender][stakes[msg.sender].length - 1];
         stakes[msg.sender].pop();
 
         totalStaked -= userStake.amount;
+        rewardPool -= reward;
         require(stakingToken.transfer(msg.sender, amountToTransfer), "Transfer failed");
         emit Withdrawn(msg.sender, userStake.amount, reward);
     }
 
+    /// @notice Allows the DAO to access up to 30% of the locked funds.
+    function accessLockedFunds(uint256 amount) external onlyOwner {
+        uint256 maxAllowed = (totalStaked * 30) / 100;
+        require(amount <= maxAllowed, "Exceeds 30% of locked funds");
+        require(stakingToken.transfer(msg.sender, amount), "Transfer failed");
+        emit LockedFundsAccessed(amount);
+    }
+
     /// @notice Calculates the reward for a given stake.
-    /// @param _stake Stake details.
-    /// @param _duration Duration of the stake.
-    /// @return Reward amount.
     function calculateReward(Stake memory _stake, uint256 _duration) internal pure returns (uint256) {
         return (_stake.amount * _stake.rewardRate * _duration) / (365 days * 100);
     }
 
     /// @notice Gets the total stake of a user.
-    /// @param _user Address of the user.
-    /// @return Total stake amount.
     function getUserTotalStake(address _user) public view returns (uint256) {
         uint256 total = 0;
         for (uint256 i = 0; i < stakes[_user].length; i++) {
@@ -152,27 +159,7 @@ contract StakingContract is Ownable, ReentrancyGuard, Pausable {
         return total;
     }
 
-    /// @notice Gets the voting power of a user.
-    /// @param _user Address of the user.
-    /// @return Voting power.
-    function getVotingPower(address _user) external view returns (uint256) {
-        uint256 totalVotingPower = 0;
-        for (uint256 i = 0; i < stakes[_user].length; i++) {
-            Stake memory userStake = stakes[_user][i];
-            uint256 multiplier = 1e18;
-            if (userStake.lockPeriod == 30 days) multiplier = 11e17;
-            else if (userStake.lockPeriod == 90 days) multiplier = 13e17;
-            else if (userStake.lockPeriod == 180 days) multiplier = 16e17;
-            else if (userStake.lockPeriod == 365 days) multiplier = 2e18;
-
-            totalVotingPower += (userStake.amount * multiplier) / 1e18;
-        }
-        return totalVotingPower;
-    }
-
     /// @notice Gets the staking plan by lock period.
-    /// @param lockPeriod Lock period of the plan.
-    /// @return Staking plan details.
     function getPlanByLockPeriod(uint256 lockPeriod) internal view returns (Plan memory) {
         for (uint256 i = 0; i < stakingPlans.length; i++) {
             if (stakingPlans[i].lockPeriod == lockPeriod) {

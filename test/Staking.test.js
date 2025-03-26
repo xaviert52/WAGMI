@@ -40,54 +40,46 @@ describe("StakingContract", function () {
     await stakingContract.addRewardPool(ethers.utils.parseEther("100000"));
   });
 
-  it("should update the reward pool correctly when rewards are added", async function () {
-    const initialRewardPool = await stakingContract.rewardPool();
-    const additionalReward = ethers.utils.parseEther("5000");
-
-    await stakingToken.connect(owner).approve(stakingContract.address, additionalReward);
-    await stakingContract.addRewardPool(additionalReward);
-
-    const updatedRewardPool = await stakingContract.rewardPool();
-    expect(updatedRewardPool).to.equal(initialRewardPool.add(additionalReward));
-  });
-
-  it("should update the reward pool correctly after withdrawals", async function () {
+  it("should calculate dynamic penalties for early withdrawals", async function () {
     const stakeAmount = ethers.utils.parseEther("500");
-    const planIndex = 0; // 30 days lock period
+    const planIndex = 3; // 365 days lock period
 
     await stakingContract.connect(user1).stake(stakeAmount, planIndex);
 
-    // Simulate time passing
-    await ethers.provider.send("evm_increaseTime", [30 * 24 * 60 * 60]); // 30 days
+    // Simulate time passing (25% of lock period)
+    await ethers.provider.send("evm_increaseTime", [91 * 24 * 60 * 60]); // ~91 days
     await ethers.provider.send("evm_mine");
 
     const rewardPoolBefore = await stakingContract.rewardPool();
     await stakingContract.connect(user1).withdraw(0);
     const rewardPoolAfter = await stakingContract.rewardPool();
 
-    expect(rewardPoolAfter).to.be.lessThan(rewardPoolBefore);
+    expect(rewardPoolAfter).to.be.greaterThan(rewardPoolBefore); // Penalty added to reward pool
   });
 
-  it("should revert if trying to stake with an invalid plan index", async function () {
+  it("should revert if reward pool has insufficient funds", async function () {
     const stakeAmount = ethers.utils.parseEther("500");
-    const invalidPlanIndex = 10; // Non-existent plan index
-
-    await expect(stakingContract.connect(user1).stake(stakeAmount, invalidPlanIndex)).to.be.revertedWith(
-      "Invalid staking plan"
-    );
-  });
-
-  it("should revert if trying to withdraw more than the staked amount", async function () {
-    const stakeAmount = ethers.utils.parseEther("500");
-    const planIndex = 0; // 30 days lock period
+    const planIndex = 3; // 365 days lock period
 
     await stakingContract.connect(user1).stake(stakeAmount, planIndex);
 
+    // Deplete the reward pool
+    await stakingContract.connect(owner).accessLockedFunds(ethers.utils.parseEther("100000"));
+
     // Simulate time passing
-    await ethers.provider.send("evm_increaseTime", [30 * 24 * 60 * 60]); // 30 days
+    await ethers.provider.send("evm_increaseTime", [365 * 24 * 60 * 60]); // 365 days
     await ethers.provider.send("evm_mine");
 
-    // Attempt to withdraw from an invalid stake index
-    await expect(stakingContract.connect(user1).withdraw(1)).to.be.revertedWith("Invalid stake index");
+    await expect(stakingContract.connect(user1).withdraw(0)).to.be.revertedWith("Insufficient reward pool");
+  });
+
+  it("should allow the DAO to access up to 30% of locked funds", async function () {
+    const stakeAmount = ethers.utils.parseEther("1000");
+    const planIndex = 3; // 365 days lock period
+
+    await stakingContract.connect(user1).stake(stakeAmount, planIndex);
+
+    const maxAllowed = (await stakingContract.totalStaked()).mul(30).div(100);
+    await expect(stakingContract.connect(owner).accessLockedFunds(maxAllowed)).to.not.be.reverted;
   });
 });

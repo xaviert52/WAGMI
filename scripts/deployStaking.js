@@ -1,37 +1,44 @@
-require("dotenv").config();
 const { ethers } = require("hardhat");
-const fs = require("fs");
 
 async function main() {
-  const stakingTokenAddress = process.env.STAKING_TOKEN_ADDRESS;
-  const initialOwner = process.env.INITIAL_OWNER;
-  const maxStake = ethers.utils.parseEther("10000"); // Máximo de stake permitido para todos los usuarios
-  const lockPeriods = [30 * 24 * 60 * 60, 90 * 24 * 60 * 60, 180 * 24 * 60 * 60, 365 * 24 * 60 * 60];
-  const rewardRates = [5, 10, 15, 20];
-  const earlyWithdrawalPenalties = [20, 15, 10, 5];
+  const [deployer] = await ethers.getSigners();
 
-  if (!stakingTokenAddress || !initialOwner) {
-    throw new Error("Please set STAKING_TOKEN_ADDRESS and INITIAL_OWNER in your .env file");
-  }
+  console.log("Deploying contracts with the account:", deployer.address);
 
-  console.log("Deploying StakingContract...");
-  const StakingContract = await ethers.getContractFactory("StakingContract");
-  const stakingContract = await StakingContract.deploy(
-    stakingTokenAddress,
-    initialOwner,
-    maxStake,
-    lockPeriods,
-    rewardRates,
-    earlyWithdrawalPenalties
+  // Step 1: Deploy WAGMIToken
+  console.log("Deploying WAGMIToken...");
+  const WAGMIToken = await ethers.getContractFactory("WAGMIToken");
+  const wagmiToken = await WAGMIToken.deploy(
+    "WAGMI Token",
+    "WAGMI",
+    ethers.utils.parseEther("10000000"), // 10,000,000 tokens
+    1, // 1% burn fee
+    1, // 1% reward pool fee
+    ethers.constants.AddressZero // Placeholder for reward pool (to be set later)
   );
+  await wagmiToken.deployed();
+  console.log("WAGMIToken deployed to:", wagmiToken.address);
 
-  await stakingContract.deployed();
-  console.log("StakingContract deployed to:", stakingContract.address);
+  // Step 2: Deploy StakingContract
+  console.log("Deploying StakingContract...");
+  const Staking = await ethers.getContractFactory("StakingContract");
+  const staking = await Staking.deploy(
+    wagmiToken.address, // Address of the WAGMIToken
+    deployer.address, // Initial owner
+    ethers.utils.parseEther("10000"), // Max stake
+    [30 * 24 * 60 * 60, 90 * 24 * 60 * 60, 180 * 24 * 60 * 60, 365 * 24 * 60 * 60], // Lock periods
+    [5, 10, 15, 20], // Reward rates
+    [20, 15, 10, 5] // Early withdrawal penalties
+  );
+  await staking.deployed();
+  console.log("StakingContract deployed to:", staking.address);
 
-  // Guardar la dirección del contrato en el archivo .env
-  const envPath = "./.env";
-  fs.appendFileSync(envPath, `STAKING_CONTRACT_ADDRESS=${stakingContract.address}\n`);
-  console.log(`STAKING_CONTRACT_ADDRESS saved to ${envPath}`);
+  // Step 3: Set reward pool in WAGMIToken
+  console.log("Setting reward pool in WAGMIToken...");
+  await wagmiToken.setRewardPool(staking.address);
+  console.log("Reward pool set to:", staking.address);
+
+  console.log("Deployment completed successfully!");
 }
 
 main()
